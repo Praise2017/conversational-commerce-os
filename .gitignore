@@ -1,0 +1,24 @@
+# Node
+node_modules/
+**/node_modules/
+dist/
+*.log
+
+# Env
+.env
+**/.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+coverage/
+.tmp/
+.cache/
+.turbo/

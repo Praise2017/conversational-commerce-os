@@ -1,0 +1,64 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    command: npm run dev
+    env_file:
+      - ./backend/.env
+    environment:
+      # Allow overriding DB connection at runtime
+      - DATABASE_URL=${DATABASE_URL:-}
+      - ENFORCE_AUTH=${ENFORCE_AUTH:-false}
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    networks:
+      - ccos
+
+  frontend:
+    build:
+      context: ./frontend
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    env_file:
+      - ./frontend/.env
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:4000}
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+    networks:
+      - ccos
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=praisepoint
+      - POSTGRES_PASSWORD=devpassword
+      - POSTGRES_DB=praisepoint
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "praisepoint"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ccos
+
+volumes:
+  postgres-data:
+
+networks:
+  ccos:
+    driver: bridge

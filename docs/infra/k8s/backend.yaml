@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ccos-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ccos-backend
+  template:
+    metadata:
+      labels:
+        app: ccos-backend
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/org/ccos-backend:latest
+          ports:
+            - containerPort: 4000
+          env:
+            - name: PORT
+              value: "4000"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ccos-secrets
+                  key: DATABASE_URL
+          resources:
+            requests: { cpu: "100m", memory: "256Mi" }
+            limits: { cpu: "1", memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ccos-backend
+spec:
+  selector:
+    app: ccos-backend
+  ports:
+    - port: 80
+      targetPort: 4000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ccos-api
+  annotations:
+    kubernetes.io/ingress.class: alb
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ccos-backend
+                port:
+                  number: 80

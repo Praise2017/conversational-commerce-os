@@ -1,0 +1,405 @@
+openapi: 3.0.3
+info:
+  title: PraisePoint E Commerce API
+  version: 0.1.0
+servers:
+  - url: https://api.example.com
+  - url: http://localhost:4000
+paths:
+  /healthz:
+    get:
+      summary: Liveness
+      responses:
+        '200': { description: OK }
+
+  /v1/auth/token:
+    post:
+      summary: Issue JWT via OAuth2 (MVP)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                client_id: { type: string }
+                client_secret: { type: string }
+                workspace_id: { type: string }
+              required: [client_id, client_secret, workspace_id]
+      responses:
+        '200':
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: { type: string }
+                  token_type: { type: string, example: Bearer }
+                  expires_in: { type: integer }
+
+  /v1/contacts:
+    get:
+      summary: List contacts
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        '200':
+          description: Contacts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Contact' }
+    post:
+      summary: Create contact
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContactCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contact' }
+
+  /v1/contacts/{id}:
+    get:
+      summary: Get contact
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contact' }
+
+  /v1/messages:
+    post:
+      summary: Send outbound message
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MessageSend' }
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Job' }
+
+  /v1/channels:
+    get:
+      summary: List channels
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Channel' }
+    post:
+      summary: Connect a channel
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChannelCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Channel' }
+
+  /v1/workflows:
+    get:
+      summary: List workflows
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Workflow' }
+    post:
+      summary: Create workflow
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WorkflowCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workflow' }
+
+  /v1/broadcasts:
+    post:
+      summary: Create broadcast
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BroadcastCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Broadcast' }
+    get:
+      summary: List broadcasts
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Broadcast' }
+
+  /v1/templates:
+    get:
+      summary: List templates
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Template' }
+    post:
+      summary: Create template
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TemplateCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Template' }
+
+  /v1/analytics/metrics:
+    get:
+      summary: Fetch metrics
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+        - in: query
+          name: key
+          schema: { type: string, enum: [csat, aht, automation_rate, revenue_per_convo] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key: { type: string }
+                  value: { type: number }
+
+  /v1/webhooks/inbound/{channel}:
+    post:
+      summary: Receive inbound from a channel (adapter -> API)
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceHeader'
+        - name: channel
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InboundMessage' }
+      responses:
+        '202': { description: Accepted }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    WorkspaceHeader:
+      name: x-workspace-id
+      in: header
+      required: true
+      schema: { type: string }
+  schemas:
+    Contact:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        displayName: { type: string }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        fields: { type: object, additionalProperties: true }
+        tags: { type: array, items: { type: string } }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ContactCreate:
+      type: object
+      required: [displayName]
+      properties:
+        displayName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        fields: { type: object, additionalProperties: true }
+        tags: { type: array, items: { type: string } }
+    MessageSend:
+      type: object
+      required: [contactId, channelId, type]
+      properties:
+        contactId: { type: string, format: uuid }
+        channelId: { type: string, format: uuid }
+        type: { type: string, enum: [text, image, template] }
+        text: { type: string }
+        templateId: { type: string, format: uuid }
+        variables: { type: object, additionalProperties: true }
+        metadata: { type: object, additionalProperties: true }
+    InboundMessage:
+      type: object
+      required: [externalId, type]
+      properties:
+        externalId: { type: string }
+        type: { type: string, enum: [text, image, template] }
+        text: { type: string }
+        mediaUrl: { type: string }
+        metadata: { type: object, additionalProperties: true }
+    Channel:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [whatsapp, messenger, instagram, sms, email, webchat, line, wechat] }
+        status: { type: string, enum: [inactive, active, error] }
+        name: { type: string }
+        createdAt: { type: string, format: date-time }
+    ChannelCreate:
+      type: object
+      required: [type, name, credentials]
+      properties:
+        type: { $ref: '#/components/schemas/Channel/properties/type' }
+        name: { type: string }
+        credentials: { type: object, additionalProperties: true }
+    Workflow:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        version: { type: integer }
+        status: { type: string, enum: [draft, active, archived] }
+        dsl: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+    WorkflowCreate:
+      type: object
+      required: [name, dsl]
+      properties:
+        name: { type: string }
+        dsl: { type: object, additionalProperties: true }
+    Template:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        channelType: { type: string }
+        body: { type: string }
+        variables: { type: array, items: { type: string } }
+        status: { type: string, enum: [approved, pending, rejected] }
+    TemplateCreate:
+      type: object
+      required: [name, channelType, body]
+      properties:
+        name: { type: string }
+        channelType: { type: string }
+        body: { type: string }
+        variables: { type: array, items: { type: string } }
+    Broadcast:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        templateId: { type: string, format: uuid }
+        segmentId: { type: string, format: uuid }
+        status: { type: string, enum: [draft, scheduled, running, completed, failed] }
+        scheduledAt: { type: string, format: date-time }
+    BroadcastCreate:
+      type: object
+      required: [name, templateId, segmentId]
+      properties:
+        name: { type: string }
+        templateId: { type: string, format: uuid }
+        segmentId: { type: string, format: uuid }
+        scheduledAt: { type: string, format: date-time }
+    Segment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        filter: { type: object, additionalProperties: true }
+    Job:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string }
+        status: { type: string, enum: [queued, running, success, failed] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+security:
+  - bearerAuth: []

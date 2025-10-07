@@ -1,0 +1,39 @@
+{
+  "id": "wf-hello",
+  "name": "Welcome & Route",
+  "version": 3,
+  "trigger": { "type": "message.received", "channels": ["whatsapp", "webchat"] },
+  "nodes": [
+    {
+      "id": "n1",
+      "type": "condition.intent",
+      "config": { "intents": ["sales", "support"], "fallback": "other" },
+      "ports": { "sales": "n2", "support": "n3", "other": "n4" }
+    },
+    {
+      "id": "n2",
+      "type": "action.send_message",
+      "config": { "channel": "same", "text": "Hi! Sales here. How can we help?" },
+      "next": "n5"
+    },
+    {
+      "id": "n3",
+      "type": "action.send_message",
+      "config": { "channel": "same", "text": "Support here! Describe your issue." },
+      "next": "n5"
+    },
+    {
+      "id": "n4",
+      "type": "action.send_message",
+      "config": { "channel": "same", "text": "Let me connect you to the right team." },
+      "next": "n5"
+    },
+    {
+      "id": "n5",
+      "type": "action.assign",
+      "config": { "queue": "tier1" },
+      "next": null
+    }
+  ],
+  "globals": { "business_hours": "9-5" }
+}
