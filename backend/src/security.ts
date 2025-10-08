@@ -1,18 +1,32 @@
 import type { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
+import cors, { type CorsOptions } from 'cors';
 
-export function corsOptionsFromEnv() {
-  const list = (process.env.CORS_ORIGINS || '*').split(',').map(s => s.trim()).filter(Boolean);
-  if (list.includes('*')) return { origin: true } as Parameters<typeof cors>[0];
+type OriginDelegate = (requestOrigin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => void;
+
+export function corsOptionsFromEnv(): CorsOptions {
+  const list = (process.env.CORS_ORIGINS || '*')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (list.includes('*')) {
+    return { origin: true };
+  }
   const allowed = new Set(list);
+  const origin: OriginDelegate = (requestOrigin, callback) => {
+    if (!requestOrigin) {
+      callback(null, true); // same-origin or curl
+      return;
+    }
+    if (allowed.has(requestOrigin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error('CORS_NOT_ALLOWED'), false);
+  };
   return {
-    origin: (origin: any, cb: any) => {
-      if (!origin) return cb(null, true); // same-origin or curl
-      if (allowed.has(origin)) return cb(null, true);
-      return cb(new Error('CORS_NOT_ALLOWED'), false);
-    },
-    credentials: true
-  } as Parameters<typeof cors>[0];
+    origin,
+    credentials: true,
+  };
 }
 
 export function securityHeadersMiddleware(req: Request, res: Response, next: NextFunction) {

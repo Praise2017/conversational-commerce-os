@@ -1,5 +1,5 @@
-import type { Workflow, Node } from './types.js'
-import { addMessage } from '../storage/db.js'
+import type { Workflow } from './types.js'
+import { addMessage, type Contact, type Message } from '../storage/db.js'
 import { getPool } from '../db/pg.js'
 import * as msgRepo from '../repositories/messagesRepo.js'
 import * as wfRepo from '../repositories/workflowsRepo.js'
@@ -8,10 +8,15 @@ const workflowStore: Record<string, Workflow[]> = {}
 
 function ensureDefaultWorkflow(ws: string) {
   if (!workflowStore[ws]) {
+    const now = new Date().toISOString()
     const wf: Workflow = {
       id: 'wf-echo',
       name: 'Auto Reply Echo',
+      status: 'active',
       trigger: 'message.received',
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
       start: 'n1',
       nodes: [
         { id: 'n1', type: 'action.send_message', params: { textTemplate: 'Thanks {{contactName}}: {{messageText}}' } }
@@ -39,7 +44,13 @@ function classifyIntent(text?: string): string | null {
   return 'other'
 }
 
-export async function runWorkflowsForInbound(params: { workspaceId: string, contact: any, message: any }) {
+type InboundContext = {
+  workspaceId: string
+  contact: Contact
+  message: Message
+}
+
+export async function runWorkflowsForInbound(params: InboundContext) {
   const { workspaceId, contact, message } = params
   const pool = getPool()
   let wfs: Workflow[] = []
@@ -65,7 +76,9 @@ export async function runWorkflowsForInbound(params: { workspaceId: string, cont
           break
         }
         case 'action.send_message': {
-          const text = renderTemplate(node.params?.textTemplate || '', {
+          const sendParams = node.params ?? {}
+          const template = 'textTemplate' in sendParams && typeof sendParams.textTemplate === 'string' ? sendParams.textTemplate : ''
+          const text = renderTemplate(template, {
             contactName: contact.displayName || 'there',
             messageText: message.text || ''
           })
