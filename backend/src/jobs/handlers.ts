@@ -3,10 +3,19 @@ import * as contactRepo from '../repositories/contactsRepo.js';
 import * as bRepo from '../repositories/broadcastsRepo.js';
 import * as segmentsRepo from '../repositories/segmentsRepo.js';
 
-export async function handleBroadcastRun(payload: { workspaceId: string; broadcastId: string; templateText: string; segmentId?: string | null }) {
+export type BroadcastRunPayload = {
+  workspaceId: string;
+  broadcastId: string;
+  templateText: string;
+  segmentId: string | null;
+};
+
+export async function handleBroadcastRun(payload: BroadcastRunPayload) {
   const { workspaceId: ws, broadcastId, templateText, segmentId } = payload;
   const contacts = segmentId ? await segmentsRepo.contactsForSegment(ws, segmentId) : await contactRepo.listContacts(ws);
-  let targeted = contacts.length, sent = 0, failed = 0;
+  const targeted = contacts.length;
+  let sent = 0;
+  let failed = 0;
   for (const c of contacts) {
     try {
       await msgRepo.addMessage(ws, { contactId: c.id, direction: 'outbound', mtype: 'text', text: templateText });

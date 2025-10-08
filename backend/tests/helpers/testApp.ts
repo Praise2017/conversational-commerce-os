@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import pinoHttp from 'pino-http';
 import contactsRouter from '../../src/routes/contacts.js';
 import messagesRouter from '../../src/routes/messages.js';
 import inboundRouter from '../../src/routes/inbound.js';
@@ -11,16 +10,18 @@ import analyticsRouter from '../../src/routes/analytics.js';
 import complianceRouter from '../../src/routes/compliance.js';
 import segmentsRouter from '../../src/routes/segments.js';
 import statusWhatsappRouter from '../../src/routes/whatsappStatus.js';
+import workflowsRouter from '../../src/routes/workflows.js';
 import authRouter from '../../src/routes/auth.js';
 import { authOptional, authRequired } from '../../src/middleware/auth.js';
 import { requireWorkspace } from '../../src/middleware/tenant.js';
 import { corsOptionsFromEnv, securityHeadersMiddleware, rateLimitMiddleware } from '../../src/security.js';
-import { logger } from '../../src/logger.js';
+import { requestLogger } from '../../src/logger.js';
 
 export function createTestApp() {
+  delete process.env.DATABASE_URL;
   const app = express();
 
-  app.use((pinoHttp as unknown as (opts: any) => import('express').RequestHandler)({ logger }));
+  app.use(requestLogger());
   app.use(cors(corsOptionsFromEnv()));
   app.use(securityHeadersMiddleware);
   app.use(express.json({ limit: '2mb' }));
@@ -46,6 +47,7 @@ export function createTestApp() {
   app.use('/v1/analytics', analyticsRouter);
   app.use('/v1/compliance', complianceRouter);
   app.use('/v1/segments', segmentsRouter);
+  app.use('/v1/workflows', workflowsRouter);
 
   return app;
 }

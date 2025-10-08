@@ -36,6 +36,27 @@ An enterprise-grade, multi-tenant platform unifying omnichannel messaging, intel
   ```
 - **Hot reload**: Because `/app` is bind mounted, local file edits trigger the usual `npm run dev` watchers inside the containers without rebuilding images.
 
+## Observability & Operations
+
+- **Structured logging**: The backend uses `pino` with per-request context captured by `pino-http`. Logs automatically include request IDs, workspace IDs, and decoded user claims. Background tasks (broadcast scheduler, job worker) emit structured messages via child loggers tagged with the task name.
+- **Health endpoint**: `GET /healthz` returns `{ status, db, uptime, version }`. When `DATABASE_URL` is configured the handler executes a lightweight `SELECT 1`; failures are logged and produce HTTP `503` with `db: "error"`.
+- **Prometheus metrics**: `GET /metrics` exposes default Node metrics plus custom instrumentation:
+  - `http_request_duration_seconds` histogram (labels: `method`, `route`, `status_code`).
+  - `broadcast_scheduler_runs_total`, `broadcast_scheduler_enqueued_total`, `broadcast_scheduler_errors_total` counters.
+  - `job_worker_processed_total` counter (labels: `status`, `type`).
+- **Tracing**: Optional OpenTelemetry bootstrap remains available via `OTEL_ENABLED=true`.
+
+## Database & Migrations
+
+- The canonical SQL schema lives at `docs/schema.sql`. Update this file for any DDL change so both documentation and automation remain consistent.
+- To apply the schema against Postgres (e.g., Docker Compose `postgres` service):
+  ```bash
+  cd backend
+  npm run migrate
+  ```
+  The script checks `DATABASE_URL` and executes the contents of `docs/schema.sql` via `pg`. Missing files or connectivity issues surface as errors.
+- When running inside Docker Compose, ensure the backend container has `DATABASE_URL` pointing at the `postgres` service (already provided via `docker-compose.yml`).
+
 ## Delivery Governance
 
 - **Backlog source**: Jira Software project `PraisePoint E Commerce` (`https://praisegovaya.atlassian.net`).

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { Workflow, WorkflowStatus, Node, Edge } from '../workflows/types.js';
 
 export type Contact = {
   id: string;
@@ -61,12 +62,15 @@ type WorkspaceStore = {
   channels: Channel[];
   broadcasts: Broadcast[];
   templates: Template[];
+  workflows: Workflow[];
 };
 
 const store: Record<string, WorkspaceStore> = {};
 
 function getWorkspace(wsId: string): WorkspaceStore {
-  if (!store[wsId]) store[wsId] = { contacts: [], messages: [], externalMap: {}, channels: [], broadcasts: [], templates: [] };
+  if (!store[wsId]) {
+    store[wsId] = { contacts: [], messages: [], externalMap: {}, channels: [], broadcasts: [], templates: [], workflows: [] };
+  }
   return store[wsId];
 }
 
@@ -235,4 +239,64 @@ export function getSummaryCounts(wsId: string) {
 
 export function listWorkspaceIds(): string[] {
   return Object.keys(store);
+}
+
+// Workflows
+
+type WorkflowInput = {
+  name: string;
+  status: WorkflowStatus;
+  trigger: 'message.received';
+  start: string;
+  nodes: Node[];
+  edges: Edge[];
+};
+
+export function listWorkflows(wsId: string): Workflow[] {
+  return getWorkspace(wsId).workflows.slice();
+}
+
+export function findWorkflow(wsId: string, id: string): Workflow | undefined {
+  return getWorkspace(wsId).workflows.find(wf => wf.id === id);
+}
+
+export function addWorkflow(wsId: string, input: WorkflowInput): Workflow {
+  const now = new Date().toISOString();
+  const workflow: Workflow = {
+    id: randomUUID(),
+    name: input.name,
+    status: input.status,
+    trigger: input.trigger,
+    start: input.start,
+    nodes: input.nodes,
+    edges: input.edges,
+    version: 1,
+    createdAt: now,
+    updatedAt: now,
+  };
+  getWorkspace(wsId).workflows.push(workflow);
+  return workflow;
+}
+
+export function updateWorkflow(wsId: string, id: string, input: Partial<WorkflowInput>): Workflow | undefined {
+  const storeWs = getWorkspace(wsId);
+  const existing = storeWs.workflows.find(wf => wf.id === id);
+  if (!existing) return undefined;
+  const now = new Date().toISOString();
+  if (input.name) existing.name = input.name;
+  if (input.status) existing.status = input.status;
+  if (input.trigger) existing.trigger = input.trigger;
+  if (input.start) existing.start = input.start;
+  if (input.nodes) existing.nodes = input.nodes;
+  if (input.edges) existing.edges = input.edges;
+  existing.version += 1;
+  existing.updatedAt = now;
+  return existing;
+}
+
+export function deleteWorkflow(wsId: string, id: string): boolean {
+  const storeWs = getWorkspace(wsId);
+  const before = storeWs.workflows.length;
+  storeWs.workflows = storeWs.workflows.filter(wf => wf.id !== id);
+  return storeWs.workflows.length !== before;
 }

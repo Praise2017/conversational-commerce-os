@@ -71,7 +71,7 @@ export async function list(wsId: string): Promise<Broadcast[]> {
   }));
 }
 
-export async function listDue(nowIso: string): Promise<Array<{ workspaceId: string; id: string; name: string; templateText: string }>> {
+export async function listDue(nowIso: string): Promise<Array<{ workspaceId: string; id: string; name: string; templateText: string; segmentId?: string | null }>> {
   const p = getPool();
   if (!p) throw new Error('NO_DB');
   const r = await p.query<any>(
