@@ -1,16 +1,14 @@
-version: '3.9'
-
 services:
   backend:
     build:
       context: ./backend
-    command: npm run dev
+      target: dev
     env_file:
       - ./backend/.env
     environment:
       # Allow overriding DB connection at runtime
       - DATABASE_URL=${DATABASE_URL:-}
-      - ENFORCE_AUTH=${ENFORCE_AUTH:-false}
+      - NODE_ENV=development
     ports:
       - "4000:4000"
     depends_on:
@@ -18,13 +16,14 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - backend-node-modules:/app/node_modules
     networks:
       - ccos
 
   frontend:
     build:
       context: ./frontend
-    command: npm run dev -- --host 0.0.0.0 --port 5173
+      target: dev
     env_file:
       - ./frontend/.env
     environment:
@@ -35,6 +34,7 @@ services:
       - backend
     volumes:
       - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
     networks:
       - ccos
 
@@ -58,6 +58,8 @@ services:
 
 volumes:
   postgres-data:
+  backend-node-modules:
+  frontend-node-modules:
 
 networks:
   ccos:
