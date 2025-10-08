@@ -36,6 +36,13 @@ An enterprise-grade, multi-tenant platform unifying omnichannel messaging, intel
   ```
 - **Hot reload**: Because `/app` is bind mounted, local file edits trigger the usual `npm run dev` watchers inside the containers without rebuilding images.
 
+## Delivery Governance
+
+- **Backlog source**: Jira Software project `PraisePoint E Commerce` (`https://praisegovaya.atlassian.net`).
+- **Board columns**: `Backlog → Ready → In Progress → Code Review → QA → Done`. Move issues across columns as work progresses.
+- **GitHub integration**: The repository connects via the "GitHub for Atlassian" app. Install at `https://github.com/apps/github-for-atlassian` (only selected repos) and manage the link inside Jira under `Apps → Manage apps → GitHub for Atlassian`.
+- **Branch/PR naming**: Include the Jira key in branches, commit messages, and PR titles (e.g., `KAN-7 backfill governance docs`). This enables automatic syncing of development activity back into Jira.
+
 ## Project Structure
 
 - backend/ — TypeScript Express API (multi-tenant via `x-workspace-id` header)
