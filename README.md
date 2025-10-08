@@ -17,6 +17,32 @@ An enterprise-grade, multi-tenant platform unifying omnichannel messaging, intel
   2) Run the Vite dev server: `npm run dev`
   3) Open http://localhost:5173 in your browser
 
+## Docker Compose Development Environment
+
+- **Prerequisites**: Docker Desktop (or any Docker engine) running with access to Node 20 compatible images.
+- **Build & start**:
+  ```bash
+  docker-compose up --build
+  ```
+  - This uses the `dev` stages defined in `backend/Dockerfile` and `frontend/Dockerfile`.
+  - Each `dev` stage seeds dependencies into `/opt/node_modules` during image build. On container start, `docker-entrypoint.dev.sh` copies those modules into the bind-mounted `/app/node_modules` only when empty, so restarts skip reinstalling packages.
+  - Named volumes `backend-node-modules` and `frontend-node-modules` keep container-specific dependencies isolated from the host.
+- **Endpoints**:
+  - Backend: `http://localhost:4000/healthz`
+  - Frontend: `http://localhost:5173`
+- **Stopping**:
+  ```bash
+  docker-compose down
+  ```
+- **Hot reload**: Because `/app` is bind mounted, local file edits trigger the usual `npm run dev` watchers inside the containers without rebuilding images.
+
+## Delivery Governance
+
+- **Backlog source**: Jira Software project `PraisePoint E Commerce` (`https://praisegovaya.atlassian.net`).
+- **Board columns**: `Backlog → Ready → In Progress → Code Review → QA → Done`. Move issues across columns as work progresses.
+- **GitHub integration**: The repository connects via the "GitHub for Atlassian" app. Install at `https://github.com/apps/github-for-atlassian` (only selected repos) and manage the link inside Jira under `Apps → Manage apps → GitHub for Atlassian`.
+- **Branch/PR naming**: Include the Jira key in branches, commit messages, and PR titles (e.g., `KAN-7 backfill governance docs`). This enables automatic syncing of development activity back into Jira.
+
 ## Project Structure
 
 - backend/ — TypeScript Express API (multi-tenant via `x-workspace-id` header)
